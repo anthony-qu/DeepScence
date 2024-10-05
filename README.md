@@ -9,9 +9,13 @@ DeepScence: an unsupervised machine learning model based on autoencoders to accu
 Python installation of DeepScence and its dependencies:
 
 ```
-$ pip install DeepScence
+$ pip install DeepScence (not yet available)
 ```
 
+or directly from github
+```
+$ pip install git+https://github.com/quyilong0402/DeepScence.git
+```
 
 ### Usage
 
