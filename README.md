@@ -1,6 +1,6 @@
 ## Single-cell and spatial detection of senescent cells using DeepScence.
 
-DeepScence: an unsupervised machine learning model based on autoencoders to accurately score and identify senescent cells in single-cell RNA-seq (scRNA-seq) and spatial transcriptomics datasets. DeepScence takes as input a `Anndata` object with expression count matrix store at `adata.X`. DeepScence outputs a continuous score and classification of senescent cells by adding columns `["deepscence", "binary"]` to `adata.obs`. 
+DeepScence: an unsupervised machine learning model based on autoencoders to accurately score and identify senescent cells in single-cell RNA-seq (scRNA-seq) and spatial transcriptomics datasets. DeepScence takes as input a `Anndata` object with expression count matrix store at `adata.X`. DeepScence outputs a continuous score and classification of senescent cells by adding columns `["ds", "binary"]` to `adata.obs`. 
 
 ### Installation
 
