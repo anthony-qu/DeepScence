@@ -46,17 +46,6 @@ def read_dataset(adata, n=5, direction_n=6, calculate_avg_exp=True, verbose=Fals
         del out.uns["log1p"]
     out = normalize(out, geneset, verbose=verbose)
 
-    # # get up/down mean and subset
-    # if calculate_avg_exp:
-    #     mean_up_5, mean_down_5, mean_up_6, mean_down_6, cdkn1a_exp = get_avgexp(
-    #         out, direction_n
-    #     )
-    #     out.obs["mean_up_5"] = mean_up_5
-    #     out.obs["mean_down_5"] = mean_down_5
-    #     out.obs["mean_up_6"] = mean_up_6
-    #     out.obs["mean_down_6"] = mean_down_6
-    #     out.obs["CDKN1A"] = cdkn1a_exp
-
     return out
 
 
@@ -168,24 +157,6 @@ def calculate_correlation(seneScore, adata, direction_n):
         & (correlation_results["low_variable"] == False)
     ]
 
-    # corr_up_5, _ = pearsonr(seneScore, adata.obs["mean_up_5"])
-    # corr_up_6, _ = pearsonr(seneScore, adata.obs["mean_up_6"])
-    # if np.isnan(adata.obs["mean_down_5"]).all():
-    #     corr_down_5 = np.nan
-    # else:
-    #     corr_down_5, _ = pearsonr(seneScore, adata.obs["mean_down_5"])
-
-    # if np.isnan(adata.obs["mean_down_6"]).all():
-    #     corr_down_6 = np.nan
-    # else:
-    #     corr_down_6, _ = pearsonr(seneScore, adata.obs["mean_down_6"])
-    # all_corrs = {
-    #     "corr_up_5": corr_up_5,
-    #     "corr_up_6": corr_up_6,
-    #     "corr_down_5": corr_down_5,
-    #     "corr_down_6": corr_down_6,
-    # }
-
     return correlation_results
 
 
@@ -221,20 +192,13 @@ def fix_score_direction(scores, adata, direction_n):
         correlation = "One node, no correlation"
     final_score = scores[:, node]
 
-    # correlation, _ = pearsonr(scores[:, 0], scores[:, 1])
-    # plt.scatter(scores[:, 0], scores[:, 1], alpha=0.6)
-    # plt.title(f"node correlation: {correlation:.2f}")
-    # plt.xlabel("node 0")
-    # plt.ylabel("node 1")
-    # plt.grid(True)
-    # plt.show()
-
     log = {
         "corr_metrics": corr_metrics,
         "reverse_log": reverse_log,
         "node": node,
         "reverse": reverse_log[node],
         "correlation": correlation,
+        "corr_df": corr_dfs[node],
     }
 
     cdkn1a_exp = adata[:, "CDKN1A"].X.flatten()
