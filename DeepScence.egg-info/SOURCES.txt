@@ -1,0 +1,14 @@
+LICENSE
+README.md
+setup.py
+DeepScence/__init__.py
+DeepScence/api.py
+DeepScence/io.py
+DeepScence/network.py
+DeepScence/train.py
+DeepScence.egg-info/PKG-INFO
+DeepScence.egg-info/SOURCES.txt
+DeepScence.egg-info/dependency_links.txt
+DeepScence.egg-info/requires.txt
+DeepScence.egg-info/top_level.txt
+DeepScence/data/coreGS_v2.csv

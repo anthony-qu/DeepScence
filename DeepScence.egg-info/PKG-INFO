@@ -1,0 +1,16 @@
+Metadata-Version: 2.1
+Name: DeepScence
+Version: 1.0.0
+Summary: Senescence Scoring
+Home-page: https://github.com/quyilong0402/DeepScence
+Author: Anthony Qu
+Author-email: anthonyylq@gmail.com
+License-File: LICENSE
+Requires-Dist: numpy>=1.7
+Requires-Dist: torch
+Requires-Dist: h5py
+Requires-Dist: six>=1.10.0
+Requires-Dist: scikit-learn
+Requires-Dist: scanpy
+Requires-Dist: kopt
+Requires-Dist: pandas

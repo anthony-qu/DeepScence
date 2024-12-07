@@ -19,7 +19,7 @@ from kneed import KneeLocator
 import seaborn as sns
 
 
-def read_dataset(adata, n=5, direction_n=6, calculate_avg_exp=True, verbose=False):
+def read_dataset(adata, n=5, calculate_avg_exp=True, verbose=False):
     # check raw counts
     X_subset = adata.X[:10]
     if sp.sparse.issparse(X_subset):
@@ -160,7 +160,7 @@ def calculate_correlation(seneScore, adata, direction_n):
     return correlation_results
 
 
-def fix_score_direction(scores, adata, direction_n):
+def fix_score_direction(scores, adata, n):
 
     corr_metrics = []
     reverse_log = []
@@ -169,12 +169,12 @@ def fix_score_direction(scores, adata, direction_n):
 
     for i in range(scores.shape[1]):
         seneScore = scores[:, i]
-        corr_df = calculate_correlation(seneScore, adata, direction_n)
+        corr_df = calculate_correlation(seneScore, adata, n)
         # if corr_df.loc[corr_df["gene_symbol"] == "CDKN1A", "correlation"].values < 0:
         if corr_df.index[corr_df["gene_symbol"] == "CDKN1A"][0] > len(corr_df) / 2:
             reverse_log.append(True)
             seneScore = -seneScore
-            corr_df = calculate_correlation(seneScore, adata, direction_n)
+            corr_df = calculate_correlation(seneScore, adata, n)
         else:
             reverse_log.append(False)
 

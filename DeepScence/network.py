@@ -108,9 +108,13 @@ class ZINBAutoencoder(nn.Module):
         batchnorm=False,
         dropout=None,
         lambda_ortho=None,
+        lambda_mmd=None,
+        batch_matrix=None,
     ):
         super(ZINBAutoencoder, self).__init__()
         self.lambda_ortho = lambda_ortho
+        self.lambda_mmd = lambda_mmd
+        self.batch_matrix = batch_matrix
         self.batchnorm = batchnorm
         self.dropout = dropout
         self.encoder = (None,)
@@ -154,7 +158,7 @@ class ZINBAutoencoder(nn.Module):
         self.init_weights()
 
     def forward(self, inputs):
-        x, sf = inputs
+        x, sf, batch_matrix = inputs
 
         encoded = self.encoder(x)
         bottleneck = self.bottleneck(encoded)
@@ -177,7 +181,7 @@ class ZINBAutoencoder(nn.Module):
         theta = torch.exp(theta)  # disp, PLEASE CAP!!!
         theta = torch.clamp(theta, 1e-4, 1e4)
 
-        output = [pi, mu, theta, encoded_scores]
+        output = [pi, mu, theta, encoded_scores, batch_matrix]
 
         return output
 
@@ -203,7 +207,7 @@ class ZINBAutoencoder(nn.Module):
         return encoded_scores
 
     def loss(self, y_true, output):
-        pi, mean, theta, encoded_scores = output
+        pi, mean, theta, encoded_scores, batch_matrix = output
         self.eps = 1e-8
         theta = torch.clamp(theta, max=1e6)
 
@@ -225,7 +229,7 @@ class ZINBAutoencoder(nn.Module):
 
         result = torch.where(y_true < 1e-8, zero_case, nb_case)
 
-        zinb_loss = torch.mean(result)
+        loss = torch.mean(result)
 
         # ortho penalty
         if self.lambda_ortho is not None:
@@ -233,10 +237,46 @@ class ZINBAutoencoder(nn.Module):
             s2 = encoded_scores[:, 1]
             ortho_loss = pearson_cor(s1, s2)
 
-            result = zinb_loss + self.lambda_ortho * ortho_loss
-            return result, zinb_loss, ortho_loss
-        else:
-            return zinb_loss
+            loss += self.lambda_ortho * ortho_loss
+
+        # mmd loss
+        if self.lambda_mmd is not None:
+            mmd_penalty = mmd_loss(encoded_scores, batch_matrix)
+            loss += self.lambda_mmd * mmd_penalty
+
+        return loss
+
+
+def mmd_loss(encoded_scores, batch_matrix):
+    """
+    Compute MMD loss to penalize batch effects in the latent space.
+
+    Args:
+        encoded_scores: A tensor of shape (n_samples, n_features) representing the latent space.
+        batch_matrix: A one-hot encoded tensor of shape (n_samples, n_batches).
+
+    Returns:
+        mmd_loss: The computed MMD loss.
+    """
+    if isinstance(batch_matrix, np.ndarray):
+        batch_matrix = torch.tensor(batch_matrix, dtype=torch.float32)
+    n_batches = batch_matrix.shape[1]
+    batch_means = []
+
+    for i in range(n_batches):
+        batch_mask = batch_matrix[:, i].bool()
+        batch_group = encoded_scores[batch_mask]
+
+        if batch_group.size(0) > 0:
+            batch_means.append(batch_group.mean(dim=0))
+
+    mmd = 0.0
+    for i in range(len(batch_means)):
+        for j in range(i + 1, len(batch_means)):
+            mean_diff = batch_means[i] - batch_means[j]
+            mmd += torch.sum(mean_diff**2)
+
+    return mmd / (len(batch_means) * (len(batch_means) - 1))
 
 
 def correlation_loss(x, y):

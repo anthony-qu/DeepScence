@@ -28,10 +28,14 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 def DeepScence(
     adata,
+    binarize=False,
+    denoise=True,
+    batch=None,
     lambda_ortho=0.1,
+    lambda_mmd=0.1,
     hidden_sizes=(32,),
     batchnorm=False,
-    dropout=0.5,
+    dropout=None,
     epochs=300,
     validation_split=0.1,
     reduce_lr=10,
@@ -39,11 +43,8 @@ def DeepScence(
     batch_size=None,
     learning_rate=0.005,
     n=5,
-    direction_n=5,
     random_state=0,
     verbose=False,
-    binarize=False,
-    denoise=True,
 ):
 
     assert isinstance(adata, anndata.AnnData), "adata must be an AnnData instance"
@@ -68,7 +69,7 @@ def DeepScence(
         dca(adata, random_state=random_state)
 
     # read adata, subset, calculate up/down metrics
-    adata = read_dataset(adata, n, direction_n, verbose=True)
+    adata = read_dataset(adata, n, verbose=True)
 
     input_size = adata.n_vars
     model = ZINBAutoencoder(
@@ -78,6 +79,7 @@ def DeepScence(
         batchnorm=batchnorm,
         dropout=dropout,
         lambda_ortho=lambda_ortho,
+        lambda_mmd=lambda_mmd,
     )
 
     if lambda_ortho is not None:
@@ -95,10 +97,9 @@ def DeepScence(
         verbose=verbose,
     )
 
-    # scores = model.encoded_scores.detach().cpu().numpy()
     scores = model.predict(adata)
 
-    scores, log, cdkn1a_exp = fix_score_direction(scores, adata, direction_n)
+    scores, log, cdkn1a_exp = fix_score_direction(scores, adata, n)
     original.obsm["CDKN1A"] = cdkn1a_exp
     original.obs["ds"] = scores
     original.uns["log"] = log
@@ -120,9 +121,7 @@ def DeepScence(
                 permute_together=True,
             )
 
-            adata_perm = read_dataset(
-                adata_perm, n=n, direction_n=direction_n, calculate_avg_exp=False
-            )
+            adata_perm = read_dataset(adata_perm, n=n, calculate_avg_exp=False)
             scores_perm = model.predict(adata_perm)[:, log["node"]]
             if log["reverse"]:
                 scores_perm = -scores_perm

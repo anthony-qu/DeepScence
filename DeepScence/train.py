@@ -35,15 +35,21 @@ def train(
     else:
         raw_output = torch.tensor(adata.layers["raw_counts"], dtype=torch.float32)
 
-    # get size factor
+    # get size factor, batch matrix
     sf = torch.tensor(adata.obs["size_factors"].values, dtype=torch.float32)
+    batch_labels = adata.obs["batch"].unique()
+    batch_matrix = np.zeros((adata.n_obs, len(batch_labels)))
+    for i, batch_label in enumerate(batch_labels):
+        batch_indices = adata.obs["batch"] == batch_label
+        batch_matrix[batch_indices, i] = 1
+    batch_matrix = torch.tensor(batch_matrix, dtype=torch.float32)
 
-    dataset = TensorDataset(X_input, sf, raw_output)
+    dataset = TensorDataset(X_input, sf, batch_matrix, raw_output)
 
     if batch_size is None:  # default run without minibatching
         batch_size = adata.n_obs
-    if verbose:
-        print(model)
+    # if verbose:
+    #     print(model)
 
     total_samples = len(dataset)
     val_size = int(total_samples * validation_split)
@@ -73,18 +79,14 @@ def train(
         # training
         model.train()
         train_loss = 0
-        total_zinb_loss = 0
-        total_ortho_loss = 0
-        for X, sf, targets in train_loader:
-            inputs = (X, sf)
+        for X, sf, batch_matrix, targets in train_loader:
+            inputs = (X, sf, batch_matrix)
             optimizer.zero_grad()
             output = model(inputs)
-            loss, zinb_loss, ortho_loss = model.loss(targets, output)
+            loss = model.loss(targets, output)
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
-            total_zinb_loss += zinb_loss.item()
-            total_ortho_loss += ortho_loss.item()
 
         train_loss /= len(train_loader)  # divide by 1 if no minibatch
         train_losses.append(train_loss)
@@ -94,11 +96,11 @@ def train(
             model.eval()  # Set the model to evaluation mode
             with torch.no_grad():
                 val_loss = 0
-                for X, sf, targets in val_loader:
-                    inputs = (X, sf)
+                for X, sf, batch_matrix, targets in val_loader:
+                    inputs = (X, sf, batch_matrix)
                     output = model(inputs)
-                    _, zinb_loss, _ = model.loss(targets, output)
-                    val_loss += zinb_loss.item()
+                    loss = model.loss(targets, output)
+                    val_loss += loss.item()
                 val_loss /= len(val_loader)
             val_losses.append(val_loss)
         else:
@@ -108,14 +110,14 @@ def train(
         encoded_scores = model.encoded_scores.detach().cpu().numpy()
         pearson_corr, _ = pearsonr(encoded_scores[:, 0], encoded_scores[:, 1])
 
-        if verbose:
-            print(
-                f"Epoch {epoch}, train_loss: {round(train_loss, 5)}, "
-                f"val_loss: {round(val_loss, 5)}, "
-                f"zinb_loss: {round(total_zinb_loss, 5)}, "
-                f"ortho_loss: {round(total_ortho_loss, 5)}, "
-                f"pearson r: {round(pearson_corr, 5)}"
-            )
+        # if verbose:
+        #     print(
+        #         f"Epoch {epoch}, train_loss: {round(train_loss, 5)}, "
+        #         f"val_loss: {round(val_loss, 5)}, "
+        #         f"zinb_loss: {round(total_zinb_loss, 5)}, "
+        #         f"ortho_loss: {round(total_ortho_loss, 5)}, "
+        #         f"pearson r: {round(pearson_corr, 5)}"
+        #     )
 
         # Early stopping logic
         if early_stop is not None and reduce_lr is not None:
@@ -143,26 +145,24 @@ def train(
                     print(f"Stopping early at epoch {epoch + 1}")
                 break
 
-    # model.load_state_dict(best_model_state)  # load the best performing weights
+    # if verbose:
+    #     fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 
-    if verbose:
-        fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+    #     # Plot training and validation losses
+    #     axs[0].plot(train_losses, label="Training Loss")
+    #     axs[0].plot(val_losses, label="Validation Loss")
+    #     axs[0].set_title("Training and Validation Losses")
+    #     axs[0].set_xlabel("Epoch")
+    #     axs[0].set_ylabel("Loss")
+    #     axs[0].legend()
 
-        # Plot training and validation losses
-        axs[0].plot(train_losses, label="Training Loss")
-        axs[0].plot(val_losses, label="Validation Loss")
-        axs[0].set_title("Training and Validation Losses")
-        axs[0].set_xlabel("Epoch")
-        axs[0].set_ylabel("Loss")
-        axs[0].legend()
+    #     # # Plot correlations
+    #     # for epoch, (corr1, corr2) in enumerate(corrs):
+    #     #     axs[1].plot(epoch, corr1, "ro", markersize=1)
+    #     #     axs[1].plot(epoch, corr2, "bo", markersize=1)
+    #     # axs[1].set_title("Correlations over Epochs")
+    #     # axs[1].set_xlabel("Epoch")
+    #     # axs[1].set_ylabel("Correlation")
 
-        # # Plot correlations
-        # for epoch, (corr1, corr2) in enumerate(corrs):
-        #     axs[1].plot(epoch, corr1, "ro", markersize=1)
-        #     axs[1].plot(epoch, corr2, "bo", markersize=1)
-        # axs[1].set_title("Correlations over Epochs")
-        # axs[1].set_xlabel("Epoch")
-        # axs[1].set_ylabel("Correlation")
-
-        plt.tight_layout()
-        plt.show()
+    #     plt.tight_layout()
+    #     plt.show()
