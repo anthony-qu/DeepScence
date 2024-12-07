@@ -42,7 +42,7 @@ def train(
 
     if batch_size is None:  # default run without minibatching
         batch_size = adata.n_obs
-    if verbose:
+    if verbose == "full":
         print(model)
 
     total_samples = len(dataset)
@@ -108,7 +108,7 @@ def train(
         encoded_scores = model.encoded_scores.detach().cpu().numpy()
         pearson_corr, _ = pearsonr(encoded_scores[:, 0], encoded_scores[:, 1])
 
-        if verbose:
+        if verbose == "full":
             print(
                 f"Epoch {epoch}, train_loss: {round(train_loss, 5)}, "
                 f"val_loss: {round(val_loss, 5)}, "
@@ -145,7 +145,7 @@ def train(
 
     # model.load_state_dict(best_model_state)  # load the best performing weights
 
-    if verbose:
+    if verbose == "full":
         fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 
         # Plot training and validation losses

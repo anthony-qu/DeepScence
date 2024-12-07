@@ -1,0 +1,8 @@
+numpy>=1.7
+torch
+h5py
+six>=1.10.0
+scikit-learn
+scanpy
+kopt
+pandas
