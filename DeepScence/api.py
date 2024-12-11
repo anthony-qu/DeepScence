@@ -113,16 +113,19 @@ def DeepScence(
         logger.info("Binarizing with permutation...")
         for i in tqdm(range(n_perm)):
             np.random.seed(random_state + i)
-            adata_perm = permute(
-                original,
-                n=n,
-                sene_genes_only=True,
-                target_sum=None,
-                permute_together=True,
-            )
-
-            adata_perm = read_dataset(adata_perm, n=n, calculate_avg_exp=False)
-            scores_perm = model.predict(adata_perm)[:, log["node"]]
+            scores_perm = model.predict(
+                read_dataset(
+                    permute(
+                        original,
+                        n=n,
+                        sene_genes_only=True,
+                        target_sum=None,
+                        permute_together=False,
+                    ),
+                    n=n,
+                    calculate_avg_exp=False,
+                )
+            )[:, log["node"]]
             if log["reverse"]:
                 scores_perm = -scores_perm
             scores_perm_all.append(scores_perm)

@@ -397,40 +397,40 @@ def get_snc_clusters(adata, threshold):
 def binarize_adata(adata, scores_perm_all, mean_level=False, verbose=True):
     scores_perm_all = np.array(scores_perm_all)
     # binarize in cell level
-
-    if mean_level:
-        perm_scores = adata.obsm["scores_perm_mean"]
-    else:
-        perm_scores = np.array(scores_perm_all).flatten()
+    perm_scores = np.array(scores_perm_all).flatten()
     mean_perm = perm_scores.mean()
     std_perm = perm_scores.std()
+    threshold1 = mean_perm + std_perm
+    threshold2 = mean_perm + 2 * std_perm
+    adata.obs["z"] = (adata.obs["ds"].values - mean_perm) / std_perm
     # ds_threshold = mean_perm + 1.645 * std_perm
 
-    # CI based method
-    ps = []
-    for i in range(scores_perm_all.shape[1]):
-        p = np.mean(scores_perm_all[:, i] > adata.obs["ds"].iloc[i])
-        ps.append(p)
-    adata.obs["p"] = ps
+    # # CI based method
+    # ps = []
+    # for i in range(scores_perm_all.shape[1]):
+    #     p = np.mean(scores_perm_all[:, i] > adata.obs["ds"].iloc[i])
+    #     ps.append(p)
+    # adata.obs["p"] = ps
 
-    mask = (adata.obs["p"] > 0.8) | (adata.obs["p"] < 0.2)
-    xdata = adata.obs["ds"].values[mask]
-    ydata = adata.obs["p"].values[mask]
-    x_fit, y_fit, elbow2, popt = get_elbow(xdata, ydata)
-    # ds_threshold = elbow2
-    ds_threshold = x_fit[(abs(y_fit - 0.5)).argmin()]
+    # mask = (adata.obs["p"] > 0.8) | (adata.obs["p"] < 0.2)
+    # xdata = adata.obs["ds"].values[mask]
+    # ydata = adata.obs["p"].values[mask]
+    # x_fit, y_fit, elbow2, popt = get_elbow(xdata, ydata)
+    # # ds_threshold = elbow2
+    # ds_threshold = x_fit[(abs(y_fit - 0.5)).argmin()]
 
-    # moving elbow to the right
-    sorted_ds = np.sort(adata.obs["ds"].unique())
-    for ds_threshold in sorted_ds[sorted_ds >= elbow2]:
-        num_bad_sncs = (adata.obs["p"][adata.obs["ds"] >= ds_threshold] >= 0.5).sum()
-        pt_bad_sncs = np.mean(adata.obs["p"][adata.obs["ds"] >= ds_threshold] >= 0.5)
-        if pt_bad_sncs < 0.02:
-            break
-    # adata.obs["binary"] = (adata.obs["ds"] >= ds_threshold).astype(int)
+    # # moving elbow to the right
+    # sorted_ds = np.sort(adata.obs["ds"].unique())
+    # for ds_threshold in sorted_ds[sorted_ds >= elbow2]:
+    #     num_bad_sncs = (adata.obs["p"][adata.obs["ds"] >= ds_threshold] >= 0.5).sum()
+    #     pt_bad_sncs = np.mean(adata.obs["p"][adata.obs["ds"] >= ds_threshold] >= 0.5)
+    #     if pt_bad_sncs < 0.02:
+    #         break
+    # # adata.obs["binary"] = (adata.obs["ds"] >= ds_threshold).astype(int)
 
-    # clustering
-    best_model, target_clusters = get_snc_clusters(adata, ds_threshold)
+    # # clustering
+    # best_model, target_clusters = get_snc_clusters(adata, ds_threshold)
+    adata.obs["binary"] = (adata.obs["ds"]>threshold2).astype(int)
     prop = np.mean(adata.obs["binary"] == 1)
 
     if verbose:
@@ -464,83 +464,79 @@ def binarize_adata(adata, scores_perm_all, mean_level=False, verbose=True):
         # plot 2: peaks
         palette = {0: "#45caff", 1: "#ff1b6b"}
 
-        # peaks
-        x = np.linspace(adata.obs["ds"].min(), adata.obs["ds"].max(), 1000).reshape(
-            -1, 1
-        )
-        log_prob = best_model.score_samples(x)
-        responsibilities = best_model.predict_proba(x)
-        pdf = np.exp(log_prob)
-        pdf_individual = responsibilities * pdf[:, np.newaxis]
-
-        sns.histplot(
-            adata.obs["ds"],
-            kde=False,
-            ax=axes[0, 1],
-            color="lightgrey",
-            bins=30,
-            stat="density",
-        )
-        axes[0, 1].axvline(x=ds_threshold, color="red", linestyle="-")
-        for i in range(best_model.n_components):
-            color = "lightgrey" if i not in target_clusters else "blue"
-            sns.lineplot(
-                x=x.squeeze(), y=pdf_individual[:, i], ax=axes[0, 1], color=color
-            )
-        means = best_model.means_.squeeze()
-        y_max = axes[0, 1].get_ylim()[1]
-
-        for i, mean in enumerate(means):
-            color = "blue" if i in target_clusters else "lightgrey"
-            axes[0, 1].axvline(mean, linestyle="--", color=color)
-            axes[0, 1].text(
-                mean,
-                y_max * 0.9,
-                f"{mean:.2f}",
-                color="red" if i in target_clusters else "lightgrey",
-                ha="center",
-                va="center",
-            )
-
-        axes[0, 1].set_title("GMM best fit for scores")
-        axes[0, 1].set_xlabel("ds")
-        axes[0, 1].set_ylabel("Density")
-        axes[0, 1].set_ylim(0, y_max)
-        axes[0, 1].set_xlim(adata.obs["ds"].min(), adata.obs["ds"].max())
-
-        # plot 3: score vs. p-val
-        sns.scatterplot(
-            data=adata.obs,
-            x="ds",
-            y="p",
-            hue="binary",
-            palette=palette,
-            s=10,
-            legend="full",
-            ax=axes[1, 0],
-        )
-        axes[1, 0].plot(x_fit, y_fit, color="red", label="Reverse Sigmoid Fit")
-        axes[1, 0].set_xlim(adata.obs["ds"].min(), adata.obs["ds"].max())
-        axes[1, 0].axvline(
-            x=ds_threshold,
-            color="blue",
-            linestyle="--",
-            label=f"x = {ds_threshold:.2f}",
-        )
-        axes[1, 0].text(
-            ds_threshold,
-            0.5,
-            f"ds_threshold: {ds_threshold:.2f}",
-        )
-
-        # sns.histplot(perm_scores, bins=50, kde=False, ax=axes[1, 0], color="#9BA1F3")
-        # axes[1, 0].axvline(
-        #     x=ds_threshold, color="red", linestyle="--", label=f"x = {ds_threshold}"
+        z_scores = adata.obs["z"].values
+        prop_z_gt_1 = (z_scores > 1).mean()
+        prop_z_gt_2 = (z_scores > 2).mean()
+        prop_z_gt_3 = (z_scores > 3).mean()
+        axes[0, 1].hist(z_scores, bins=50, color='blue', alpha=0.7, edgecolor='black')
+        for z, prop, color in zip([1, 2, 3], [prop_z_gt_1, prop_z_gt_2, prop_z_gt_3], ['red', 'green', 'purple']):
+            axes[0, 1].axvline(z, color=color, linestyle='--', linewidth=2, label=f'z = {z}')
+            # Annotate the proportion next to each vertical line
+            axes[0, 1].text(z, axes[0, 1].get_ylim()[1] * 0.9, f'{100*prop:.1f}%', color=color, fontsize=7)
+        axes[0, 1].set_xlabel("Z-scores")
+        axes[0, 1].set_ylabel("Frequency")
+        axes[0, 1].set_title("Histogram of Z-scores with Proportions")
+        axes[0, 1].legend()
+        # # peaks
+        # x = np.linspace(adata.obs["ds"].min(), adata.obs["ds"].max(), 1000).reshape(
+        #     -1, 1
         # )
-        # axes[1, 0].set_xlim(adata.obs["ds"].min(), adata.obs["ds"].max())
-        # axes[1, 0].set_title("scores_perm_all")
-        # axes[1, 0].set_xlabel(None)
-        # axes[1, 0].set_ylabel(None)
+        # log_prob = best_model.score_samples(x)
+        # responsibilities = best_model.predict_proba(x)
+        # pdf = np.exp(log_prob)
+        # pdf_individual = responsibilities * pdf[:, np.newaxis]
+
+        # sns.histplot(
+        #     adata.obs["ds"],
+        #     kde=False,
+        #     ax=axes[0, 1],
+        #     color="lightgrey",
+        #     bins=30,
+        #     stat="density",
+        # )
+        # axes[0, 1].axvline(x=ds_threshold, color="red", linestyle="-")
+        # for i in range(best_model.n_components):
+        #     color = "lightgrey" if i not in target_clusters else "blue"
+        #     sns.lineplot(
+        #         x=x.squeeze(), y=pdf_individual[:, i], ax=axes[0, 1], color=color
+        #     )
+        # means = best_model.means_.squeeze()
+        # y_max = axes[0, 1].get_ylim()[1]
+
+        # for i, mean in enumerate(means):
+        #     color = "blue" if i in target_clusters else "lightgrey"
+        #     axes[0, 1].axvline(mean, linestyle="--", color=color)
+        #     axes[0, 1].text(
+        #         mean,
+        #         y_max * 0.9,
+        #         f"{mean:.2f}",
+        #         color="red" if i in target_clusters else "lightgrey",
+        #         ha="center",
+        #         va="center",
+        #     )
+
+        # axes[0, 1].set_title("GMM best fit for scores")
+        # axes[0, 1].set_xlabel("ds")
+        # axes[0, 1].set_ylabel("Density")
+        # axes[0, 1].set_ylim(0, y_max)
+        # axes[0, 1].set_xlim(adata.obs["ds"].min(), adata.obs["ds"].max())
+
+        # plot 3: pooled permuted scores
+         
+        axes[1, 0].hist(perm_scores, bins=50, alpha=0.7, color='blue', edgecolor='black')
+        axes[1, 0].axvline(threshold1, color='red', linestyle='--', linewidth=2)
+        axes[1, 0].axvline(threshold2, color='green', linestyle='--', linewidth=2)
+
+        # Annotate the proportions next to the lines
+        axes[1, 0].text(threshold1, axes[1, 0].get_ylim()[1] * 0.9, f'prop: {(adata.obs["ds"] > threshold1).mean()*100:.1f}%')
+        axes[1, 0].text(threshold2, axes[1, 0].get_ylim()[1] * 0.9, f'prop: {(adata.obs["ds"] > threshold2).mean()*100:.1f}%')
+
+        axes[1, 0].set_xlim(adata.obs["ds"].min(), adata.obs["ds"].max())
+        axes[1, 0].set_xlabel("Permuted Scores")
+        axes[1, 0].set_ylabel("Frequency")
+        axes[1, 0].set_title("Histogram of Permuted Scores")
+        plt.tight_layout()
+
 
         # plot 4: score vs. CKDN1A
         sns.scatterplot(
