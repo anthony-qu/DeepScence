@@ -32,7 +32,8 @@ def DeepScence(
     denoise=True,
     batch=None,
     lambda_ortho=0.1,
-    lambda_mmd=0.1,
+    lambda_mmd=0.7,
+    species="human",
     hidden_sizes=(32,),
     batchnorm=False,
     dropout=None,
@@ -69,7 +70,7 @@ def DeepScence(
         dca(adata, random_state=random_state)
 
     # read adata, subset, calculate up/down metrics
-    adata = read_dataset(adata, n, verbose=True)
+    adata = read_dataset(adata, species=species, n=n, verbose=True)
 
     input_size = adata.n_vars
     model = ZINBAutoencoder(

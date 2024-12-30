@@ -19,7 +19,7 @@ from kneed import KneeLocator
 import seaborn as sns
 
 
-def read_dataset(adata, n=5, calculate_avg_exp=True, verbose=False):
+def read_dataset(adata, species, n=5, calculate_avg_exp=True, verbose=False):
     # check raw counts
     X_subset = adata.X[:10]
     if sp.sparse.issparse(X_subset):
@@ -38,7 +38,7 @@ def read_dataset(adata, n=5, calculate_avg_exp=True, verbose=False):
 
     # get geneset
 
-    geneset = get_geneset(n)
+    geneset = get_geneset(n, species)
 
     # log normalize, subset, and scale
     out = adata.copy()
@@ -206,10 +206,16 @@ def fix_score_direction(scores, adata, n):
     return final_score, log, cdkn1a_exp
 
 
-def get_geneset(n=5):
+def get_geneset(n=5, species="human"):
     file_path = pkg_resources.resource_filename("DeepScence", "data/coreGS_v2.csv")
     gs = pd.read_csv(file_path, index_col=0)
     gs = gs[gs["occurrence"] >= n]
+    if species == "human":
+        gs["gene_symbol"] = gs["gene_symbol_human"]
+    elif species == "mouse":
+        gs["gene_symbol"] = gs["gene_symbol_mouse"]
+    else:
+        raise ValueError("Species not supported. Please specify 'human' or 'mouse'.")
     return gs
 
 
@@ -430,7 +436,7 @@ def binarize_adata(adata, scores_perm_all, mean_level=False, verbose=True):
 
     # # clustering
     # best_model, target_clusters = get_snc_clusters(adata, ds_threshold)
-    adata.obs["binary"] = (adata.obs["ds"]>threshold2).astype(int)
+    adata.obs["binary"] = (adata.obs["ds"] > threshold2).astype(int)
     prop = np.mean(adata.obs["binary"] == 1)
 
     if verbose:
@@ -468,11 +474,23 @@ def binarize_adata(adata, scores_perm_all, mean_level=False, verbose=True):
         prop_z_gt_1 = (z_scores > 1).mean()
         prop_z_gt_2 = (z_scores > 2).mean()
         prop_z_gt_3 = (z_scores > 3).mean()
-        axes[0, 1].hist(z_scores, bins=50, color='blue', alpha=0.7, edgecolor='black')
-        for z, prop, color in zip([1, 2, 3], [prop_z_gt_1, prop_z_gt_2, prop_z_gt_3], ['red', 'green', 'purple']):
-            axes[0, 1].axvline(z, color=color, linestyle='--', linewidth=2, label=f'z = {z}')
+        axes[0, 1].hist(z_scores, bins=50, color="blue", alpha=0.7, edgecolor="black")
+        for z, prop, color in zip(
+            [1, 2, 3],
+            [prop_z_gt_1, prop_z_gt_2, prop_z_gt_3],
+            ["red", "green", "purple"],
+        ):
+            axes[0, 1].axvline(
+                z, color=color, linestyle="--", linewidth=2, label=f"z = {z}"
+            )
             # Annotate the proportion next to each vertical line
-            axes[0, 1].text(z, axes[0, 1].get_ylim()[1] * 0.9, f'{100*prop:.1f}%', color=color, fontsize=7)
+            axes[0, 1].text(
+                z,
+                axes[0, 1].get_ylim()[1] * 0.9,
+                f"{100*prop:.1f}%",
+                color=color,
+                fontsize=7,
+            )
         axes[0, 1].set_xlabel("Z-scores")
         axes[0, 1].set_ylabel("Frequency")
         axes[0, 1].set_title("Histogram of Z-scores with Proportions")
@@ -522,21 +540,30 @@ def binarize_adata(adata, scores_perm_all, mean_level=False, verbose=True):
         # axes[0, 1].set_xlim(adata.obs["ds"].min(), adata.obs["ds"].max())
 
         # plot 3: pooled permuted scores
-         
-        axes[1, 0].hist(perm_scores, bins=50, alpha=0.7, color='blue', edgecolor='black')
-        axes[1, 0].axvline(threshold1, color='red', linestyle='--', linewidth=2)
-        axes[1, 0].axvline(threshold2, color='green', linestyle='--', linewidth=2)
+
+        axes[1, 0].hist(
+            perm_scores, bins=50, alpha=0.7, color="blue", edgecolor="black"
+        )
+        axes[1, 0].axvline(threshold1, color="red", linestyle="--", linewidth=2)
+        axes[1, 0].axvline(threshold2, color="green", linestyle="--", linewidth=2)
 
         # Annotate the proportions next to the lines
-        axes[1, 0].text(threshold1, axes[1, 0].get_ylim()[1] * 0.9, f'prop: {(adata.obs["ds"] > threshold1).mean()*100:.1f}%')
-        axes[1, 0].text(threshold2, axes[1, 0].get_ylim()[1] * 0.9, f'prop: {(adata.obs["ds"] > threshold2).mean()*100:.1f}%')
+        axes[1, 0].text(
+            threshold1,
+            axes[1, 0].get_ylim()[1] * 0.9,
+            f'prop: {(adata.obs["ds"] > threshold1).mean()*100:.1f}%',
+        )
+        axes[1, 0].text(
+            threshold2,
+            axes[1, 0].get_ylim()[1] * 0.9,
+            f'prop: {(adata.obs["ds"] > threshold2).mean()*100:.1f}%',
+        )
 
         axes[1, 0].set_xlim(adata.obs["ds"].min(), adata.obs["ds"].max())
         axes[1, 0].set_xlabel("Permuted Scores")
         axes[1, 0].set_ylabel("Frequency")
         axes[1, 0].set_title("Histogram of Permuted Scores")
         plt.tight_layout()
-
 
         # plot 4: score vs. CKDN1A
         sns.scatterplot(
