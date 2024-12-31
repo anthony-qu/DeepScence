@@ -134,7 +134,7 @@ def get_avgexp(adata, direction_n):
     return mean_up_5, mean_down_5, mean_up_6, mean_down_6, cdkn1a_exp
 
 
-def calculate_correlation(seneScore, adata, direction_n):
+def calculate_correlation(seneScore, adata, direction_n, species):
     correlation_results = []
     for i, gene in enumerate(adata.var_names):
         exp = adata.X[:, i]
@@ -148,7 +148,7 @@ def calculate_correlation(seneScore, adata, direction_n):
     ).reset_index(drop=True)
     correlation_results = pd.merge(
         correlation_results,
-        get_geneset(5)[["gene_symbol", "direction", "occurrence"]],
+        get_geneset(5, species)[["gene_symbol", "direction", "occurrence"]],
         on="gene_symbol",
         how="left",
     )
@@ -160,8 +160,14 @@ def calculate_correlation(seneScore, adata, direction_n):
     return correlation_results
 
 
-def fix_score_direction(scores, adata, n):
+def fix_score_direction(scores, adata, n, species):
 
+    if "CDKN1A" in adata.var_names:
+        anchor = "CDKN1A"
+    elif "Cdkn1a" in adata.var_names:
+        anchor = "Cdkn1a"
+    else:
+        raise ValueError("anchor missing.")
     corr_metrics = []
     reverse_log = []
     corr_dfs = []
@@ -169,12 +175,12 @@ def fix_score_direction(scores, adata, n):
 
     for i in range(scores.shape[1]):
         seneScore = scores[:, i]
-        corr_df = calculate_correlation(seneScore, adata, n)
+        corr_df = calculate_correlation(seneScore, adata, n, species)
         # if corr_df.loc[corr_df["gene_symbol"] == "CDKN1A", "correlation"].values < 0:
-        if corr_df.index[corr_df["gene_symbol"] == "CDKN1A"][0] > len(corr_df) / 2:
+        if corr_df.index[corr_df["gene_symbol"] == anchor][0] > len(corr_df) / 2:
             reverse_log.append(True)
             seneScore = -seneScore
-            corr_df = calculate_correlation(seneScore, adata, n)
+            corr_df = calculate_correlation(seneScore, adata, n, species)
         else:
             reverse_log.append(False)
 
@@ -201,7 +207,7 @@ def fix_score_direction(scores, adata, n):
         "corr_df": corr_dfs[node],
     }
 
-    cdkn1a_exp = adata[:, "CDKN1A"].X.flatten()
+    cdkn1a_exp = adata[:, anchor].X.flatten()
 
     return final_score, log, cdkn1a_exp
 

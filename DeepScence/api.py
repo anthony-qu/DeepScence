@@ -100,7 +100,7 @@ def DeepScence(
 
     scores = model.predict(adata)
 
-    scores, log, cdkn1a_exp = fix_score_direction(scores, adata, n)
+    scores, log, cdkn1a_exp = fix_score_direction(scores, adata, n, species)
     original.obsm["CDKN1A"] = cdkn1a_exp
     original.obs["ds"] = scores
     original.uns["log"] = log
@@ -124,6 +124,7 @@ def DeepScence(
                         permute_together=False,
                     ),
                     n=n,
+                    species=species,
                     calculate_avg_exp=False,
                 )
             )[:, log["node"]]
