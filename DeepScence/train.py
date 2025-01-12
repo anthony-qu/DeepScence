@@ -48,8 +48,6 @@ def train(
 
     if batch_size is None:  # default run without minibatching
         batch_size = adata.n_obs
-    # if verbose:
-    #     print(model)
 
     total_samples = len(dataset)
     val_size = int(total_samples * validation_split)
@@ -75,7 +73,7 @@ def train(
     lr_patience = reduce_lr
     best_model_state = None  # save lowest val_loss weights
 
-    for epoch in range(epochs):
+    for epoch in tqdm(range(epochs)):
         # training
         model.train()
         train_loss = 0
@@ -144,25 +142,3 @@ def train(
                 if verbose:
                     print(f"Stopping early at epoch {epoch + 1}")
                 break
-
-    # if verbose:
-    #     fig, axs = plt.subplots(1, 2, figsize=(10, 5))
-
-    #     # Plot training and validation losses
-    #     axs[0].plot(train_losses, label="Training Loss")
-    #     axs[0].plot(val_losses, label="Validation Loss")
-    #     axs[0].set_title("Training and Validation Losses")
-    #     axs[0].set_xlabel("Epoch")
-    #     axs[0].set_ylabel("Loss")
-    #     axs[0].legend()
-
-    #     # # Plot correlations
-    #     # for epoch, (corr1, corr2) in enumerate(corrs):
-    #     #     axs[1].plot(epoch, corr1, "ro", markersize=1)
-    #     #     axs[1].plot(epoch, corr2, "bo", markersize=1)
-    #     # axs[1].set_title("Correlations over Epochs")
-    #     # axs[1].set_xlabel("Epoch")
-    #     # axs[1].set_ylabel("Correlation")
-
-    #     plt.tight_layout()
-    #     plt.show()
