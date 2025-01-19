@@ -1,4 +1,4 @@
-import os, numbers, math, anndata
+import os, numbers, math, anndata, warnings
 import numpy as np
 import scipy as sp
 import pandas as pd
@@ -19,7 +19,9 @@ from kneed import KneeLocator
 import seaborn as sns
 
 
-def read_dataset(adata, species, n=5, calculate_avg_exp=True, verbose=False):
+def read_dataset(
+    adata, species, custome_gs=None, n=5, calculate_avg_exp=True, verbose=False
+):
     # check raw counts
     X_subset = adata.X[:10]
     if sp.sparse.issparse(X_subset):
@@ -29,16 +31,16 @@ def read_dataset(adata, species, n=5, calculate_avg_exp=True, verbose=False):
     if verbose:
         if is_raw_counts:
             logger.info(
-                f"Input is raw count, preprocessed {adata.n_vars} genes and {adata.n_obs} cells."
+                f"Input is raw count, processed {adata.n_vars} genes and {adata.n_obs} cells."
             )
         else:
             logger.info(
-                f"Input is preprocessed, preprocessed {adata.n_vars} genes and {adata.n_obs} cells."
+                f"Input is not count, processed {adata.n_vars} genes and {adata.n_obs} cells."
             )
 
     # get geneset
 
-    geneset = get_geneset(n, species)
+    geneset = get_geneset(n, species, custome_gs)
 
     # log normalize, subset, and scale
     out = adata.copy()
@@ -82,7 +84,7 @@ def normalize(adata, geneset, verbose):
     )
 
     if verbose:
-        logger.info("Using {} genes in the gene set for scoring".format(len(idx)))
+        logger.info("Using {} genes in the gene set for scoring.".format(len(idx)))
     # scale
     sc.pp.scale(normalized)
     return normalized
@@ -167,7 +169,10 @@ def fix_score_direction(scores, adata, n, species):
     elif "Cdkn1a" in adata.var_names:
         anchor = "Cdkn1a"
     else:
-        raise ValueError("anchor missing.")
+        anchor = None
+        logger.warning(
+            "[WARNING]: CDKN1A/Cdkn1a is not present in the gene set. Its expression is used to avoid scores being the opposite. Please check if `-adata.obs['ds']` makes more sense for your data!"
+        )
     corr_metrics = []
     reverse_log = []
     corr_dfs = []
@@ -176,11 +181,14 @@ def fix_score_direction(scores, adata, n, species):
     for i in range(scores.shape[1]):
         seneScore = scores[:, i]
         corr_df = calculate_correlation(seneScore, adata, n, species)
-        if corr_df.loc[corr_df["gene_symbol"] == "CDKN1A", "correlation"].values < 0:
-            # if corr_df.index[corr_df["gene_symbol"] == anchor][0] > len(corr_df) / 2:
-            reverse_log.append(True)
-            seneScore = -seneScore
-            corr_df = calculate_correlation(seneScore, adata, n, species)
+        if anchor is not None:
+            if corr_df.loc[corr_df["gene_symbol"] == anchor, "correlation"].values < 0:
+                # if corr_df.index[corr_df["gene_symbol"] == anchor][0] > len(corr_df) / 2:
+                reverse_log.append(True)
+                seneScore = -seneScore
+                corr_df = calculate_correlation(seneScore, adata, n, species)
+            else:
+                reverse_log.append(False)
         else:
             reverse_log.append(False)
 
@@ -207,21 +215,29 @@ def fix_score_direction(scores, adata, n, species):
         "corr_df": corr_dfs[node],
     }
 
-    cdkn1a_exp = adata[:, anchor].X.flatten()
+    if anchor is not None:
+        cdkn1a_exp = adata[:, anchor].X.flatten()
+    else:
+        cdkn1a_exp = np.full(adata.shape[0], np.nan)
 
     return final_score, log, cdkn1a_exp
 
 
-def get_geneset(n=5, species="human"):
-    file_path = pkg_resources.resource_filename("DeepScence", "data/coreGS_v2.csv")
-    gs = pd.read_csv(file_path, index_col=0)
-    gs = gs[gs["occurrence"] >= n]
-    if species == "human":
-        gs["gene_symbol"] = gs["gene_symbol_human"]
-    elif species == "mouse":
-        gs["gene_symbol"] = gs["gene_symbol_mouse"]
+def get_geneset(n=5, species="human", custome_gs=None):
+    if custome_gs is not None:
+        gs = pd.DataFrame({"gene_symbol": custome_gs})
     else:
-        raise ValueError("Species not supported. Please specify 'human' or 'mouse'.")
+        file_path = pkg_resources.resource_filename("DeepScence", "data/coreGS_v2.csv")
+        gs = pd.read_csv(file_path, index_col=0)
+        gs = gs[gs["occurrence"] >= n]
+        if species == "human":
+            gs["gene_symbol"] = gs["gene_symbol_human"]
+        elif species == "mouse":
+            gs["gene_symbol"] = gs["gene_symbol_mouse"]
+        else:
+            raise ValueError(
+                "Species not supported. Please specify 'human' or 'mouse'."
+            )
     return gs
 
 

@@ -29,6 +29,7 @@ def DeepScence(
     binarize=False,
     denoise=True,
     species="human",
+    custome_gs=None,
     lambda_ortho=0.1,
     lambda_mmd=0.7,
     hidden_sizes=(32,),
@@ -37,7 +38,7 @@ def DeepScence(
     epochs=300,
     validation_split=0.1,
     reduce_lr=10,
-    early_stop=25,
+    early_stop=35,
     batch_size=None,
     learning_rate=0.005,
     n=5,
@@ -100,6 +101,7 @@ def DeepScence(
 
     """
     assert isinstance(adata, anndata.AnnData), "adata must be an AnnData instance"
+    warnings.filterwarnings("ignore", category=RuntimeWarning, module="threadpoolctl")
 
     # set seed for reproducibility
     random.seed(random_state)
@@ -121,7 +123,9 @@ def DeepScence(
         dca(adata, random_state=random_state)
 
     # read adata, subset, calculate up/down metrics
-    adata = read_dataset(adata, species=species, n=n, verbose=True)
+    adata = read_dataset(
+        adata, species=species, n=n, custome_gs=custome_gs, verbose=True
+    )
     if "batch" not in adata.obs.columns:  # don't do MMD if no batch specified
         adata.obs["batch"] = "placeholder"
         lambda_mmd = None
