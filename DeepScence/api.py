@@ -58,6 +58,8 @@ def DeepScence(
         Whether to denoise raw counts using DCA.
     species : str, optional, default="human"
         Species of the dataset, either "human" or "mouse".
+    custome_gs : list of str, option, default=None
+        If a custome gene set is desired, input it as a vector of gene symbols.
     lambda_ortho : float, optional, default=0.1
         Weight for the orthogonality regularization term.
     lambda_mmd : float, optional, default=0.7
@@ -126,8 +128,8 @@ def DeepScence(
     adata = read_dataset(
         adata, species=species, n=n, custome_gs=custome_gs, verbose=True
     )
-    if "batch" not in adata.obs.columns:  # don't do MMD if no batch specified
-        adata.obs["batch"] = "placeholder"
+    if "b" not in adata.obs.columns:  # don't do MMD if no batch specified
+        adata.obs["b"] = "placeholder"
         lambda_mmd = None
 
     input_size = adata.n_vars

@@ -37,10 +37,10 @@ def train(
 
     # get size factor, batch matrix
     sf = torch.tensor(adata.obs["size_factors"].values, dtype=torch.float32)
-    batch_labels = adata.obs["batch"].unique()
+    batch_labels = adata.obs["b"].unique()
     batch_matrix = np.zeros((adata.n_obs, len(batch_labels)))
     for i, batch_label in enumerate(batch_labels):
-        batch_indices = adata.obs["batch"] == batch_label
+        batch_indices = adata.obs["b"] == batch_label
         batch_matrix[batch_indices, i] = 1
     batch_matrix = torch.tensor(batch_matrix, dtype=torch.float32)
 
