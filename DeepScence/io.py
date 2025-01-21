@@ -61,12 +61,6 @@ def normalize(adata, geneset, verbose):
         normalized.obs.n_counts
     )
 
-    # calculate CV
-    raw_data = normalized.X
-    gene_mean = np.mean(raw_data, axis=0)
-    gene_std = np.std(raw_data, axis=0)
-    normalized.var["cv"] = gene_std / gene_mean
-
     # log
     sc.pp.log1p(normalized)
 
@@ -77,11 +71,6 @@ def normalize(adata, geneset, verbose):
         len(idx) > 5
     ), f"Too few genes ({len(idx)} genes) in the gene set are present in adata."
     normalized = normalized[:, idx]
-
-    # calculate low variable genes among core genes
-    normalized.var["low_variable"] = normalized.var["cv"] < np.percentile(
-        normalized.var["cv"], 0
-    )
 
     if verbose:
         logger.info("Using {} genes in the gene set for scoring.".format(len(idx)))
@@ -143,8 +132,6 @@ def calculate_correlation(seneScore, adata, direction_n, species):
         corr, _ = pearsonr(exp, seneScore)
         correlation_results.append({"gene_symbol": gene, "correlation": corr})
     correlation_results = pd.DataFrame(correlation_results)
-    correlation_results["cv"] = adata.var["cv"].values
-    correlation_results["low_variable"] = adata.var["low_variable"].values
     correlation_results = correlation_results.sort_values(
         by="correlation", ascending=False
     ).reset_index(drop=True)
@@ -154,10 +141,7 @@ def calculate_correlation(seneScore, adata, direction_n, species):
         on="gene_symbol",
         how="left",
     )
-    correlation_results = correlation_results[
-        (correlation_results["occurrence"] >= 5)
-        & (correlation_results["low_variable"] == False)
-    ]
+    correlation_results = correlation_results[(correlation_results["occurrence"] >= 5)]
 
     return correlation_results
 

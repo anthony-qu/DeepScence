@@ -113,9 +113,9 @@ def DeepScence(
 
     sc.pp.filter_genes(adata, min_cells=1)
 
-    # coerce adata.X to dense
-    if sp.sparse.issparse(adata.X):
-        adata.X = adata.X.toarray()
+    # coerce adata.X to csr
+    if not sp.sparse.issparse(adata.X):
+        adata.X = sp.sparse.csr_matrix(adata.X)
 
     # save the original version
     original = adata.copy()
