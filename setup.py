@@ -13,16 +13,7 @@ setup(
             "data/*.csv"
         ],  # Include all CSV files in data directories within any package
     },
-    install_requires=[
-        "numpy>=1.7",
-        "torch",
-        "h5py",
-        "six>=1.10.0",
-        "scikit-learn",
-        "scanpy",
-        "kopt",
-        "pandas",  # for preprocessing
-    ],
+    install_requires=["torch==2.2.2", "dca==0.3.3"],
     url="https://github.com/quyilong0402/DeepScence",
     # license="Apache License 2.0",
     # classifiers=[
