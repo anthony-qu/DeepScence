@@ -14,10 +14,9 @@ setup(
         ],  # Include all CSV files in data directories within any package
     },
     install_requires=[
-        "dca==0.3.3",
         "torch==2.2.2",
         "kneed",
-        "tensorflow-cpu>=2.0,<2.5",
+        "protobuf>=3.9.0,<3.21.0",
     ],
     url="https://github.com/quyilong0402/DeepScence",
     # license="Apache License 2.0",
