@@ -68,7 +68,7 @@ def normalize(adata, geneset, verbose):
     genelist = geneset["gene_symbol"].values
     idx = np.where(normalized.var.index.isin(genelist))[0]
     assert (
-        len(idx) > 5
+        len(idx) > 3
     ), f"Too few genes ({len(idx)} genes) in the gene set are present in adata."
     normalized = normalized[:, idx]
 
