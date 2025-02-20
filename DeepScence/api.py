@@ -17,7 +17,6 @@ import os
 import pkg_resources
 import warnings
 from DeepScence import logger
-from dca.api import dca
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
@@ -119,10 +118,6 @@ def DeepScence(
 
     # save the original version
     original = adata.copy()
-
-    # denoise
-    if denoise:
-        dca(adata, random_state=random_state)
 
     # read adata, subset, calculate up/down metrics
     adata = read_dataset(
