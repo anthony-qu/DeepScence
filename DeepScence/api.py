@@ -26,7 +26,6 @@ warnings.filterwarnings("ignore", category=UserWarning)
 def DeepScence(
     adata,
     binarize=False,
-    denoise=True,
     species="human",
     custome_gs=None,
     lambda_ortho=0.1,
@@ -53,8 +52,6 @@ def DeepScence(
         AnnData object of the dataset where adata.X contains the expression count matrix.
     binarize : bool, optional, default=False
         Whether to binarize the output scores into SnCs vs. normal cells.
-    denoise : bool, optional, default=True
-        Whether to denoise raw counts using DCA.
     species : str, optional, default="human"
         Species of the dataset, either "human" or "mouse".
     custome_gs : list of str, option, default=None
