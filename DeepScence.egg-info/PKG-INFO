@@ -6,11 +6,8 @@ Home-page: https://github.com/quyilong0402/DeepScence
 Author: Anthony Qu
 Author-email: anthonyylq@gmail.com
 License-File: LICENSE
-Requires-Dist: numpy>=1.7
-Requires-Dist: torch
-Requires-Dist: h5py
-Requires-Dist: six>=1.10.0
-Requires-Dist: scikit-learn
-Requires-Dist: scanpy
-Requires-Dist: kopt
-Requires-Dist: pandas
+Requires-Dist: torch==2.2.2
+Requires-Dist: kneed
+Requires-Dist: protobuf<3.21.0,>=3.9.0
+Requires-Dist: anndata>=0.8
+Requires-Dist: pyyaml<=5.4.1

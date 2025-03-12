@@ -135,13 +135,13 @@ def calculate_correlation(seneScore, adata, direction_n, species):
     correlation_results = correlation_results.sort_values(
         by="correlation", ascending=False
     ).reset_index(drop=True)
-    correlation_results = pd.merge(
-        correlation_results,
-        get_geneset(5, species)[["gene_symbol", "direction", "occurrence"]],
-        on="gene_symbol",
-        how="left",
-    )
-    correlation_results = correlation_results[(correlation_results["occurrence"] >= 5)]
+    # correlation_results = pd.merge(
+    #     correlation_results,
+    #     get_geneset(5, species)[["gene_symbol", "direction", "occurrence"]],
+    #     on="gene_symbol", 
+    #     how="left",
+    # )
+    # correlation_results = correlation_results[(correlation_results["occurrence"] >= 5)]
 
     return correlation_results
 
