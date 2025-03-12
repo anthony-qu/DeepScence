@@ -202,12 +202,8 @@ def fix_score_direction(scores, adata, n, species, anchor_gene):
         "corr_df": corr_dfs[node],
     }
 
-    if anchor is not None:
-        cdkn1a_exp = adata[:, anchor].X.flatten()
-    else:
-        cdkn1a_exp = np.full(adata.shape[0], np.nan)
 
-    return final_score, log, cdkn1a_exp
+    return final_score, log
 
 
 def get_geneset(n=5, species="human", custome_gs=None):

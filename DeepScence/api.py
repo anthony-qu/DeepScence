@@ -157,8 +157,7 @@ def DeepScence(
 
     scores = model.predict(adata)
 
-    scores, log, cdkn1a_exp = fix_score_direction(scores, adata, n, species, anchor_gene)
-    original.obsm["CDKN1A"] = cdkn1a_exp
+    scores, log = fix_score_direction(scores, adata, n, species, anchor_gene)
     original.obs["ds"] = scores
     original.uns["log"] = log
 
