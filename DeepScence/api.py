@@ -28,6 +28,7 @@ def DeepScence(
     binarize=False,
     species="human",
     custome_gs=None,
+    anchor_gene=None,
     lambda_ortho=0.1,
     lambda_mmd=0.7,
     hidden_sizes=(32,),
@@ -56,6 +57,10 @@ def DeepScence(
         Species of the dataset, either "human" or "mouse".
     custome_gs : list of str, option, default=None
         If a custome gene set is desired, input it as a vector of gene symbols.
+    anchor_gene: str, optional, default=None
+        The encoded score may characterize senescence in the opposite direction. At default, the
+        expression of CDKN1A/Cdkn1a is used to ensure correct direction. If CDKN1A/Cdkn1a is not
+        in the dataset, set this parameter to a known positive senescence marker gene.
     lambda_ortho : float, optional, default=0.1
         Weight for the orthogonality regularization term.
     lambda_mmd : float, optional, default=0.7
@@ -152,7 +157,7 @@ def DeepScence(
 
     scores = model.predict(adata)
 
-    scores, log, cdkn1a_exp = fix_score_direction(scores, adata, n, species)
+    scores, log, cdkn1a_exp = fix_score_direction(scores, adata, n, species, anchor_gene)
     original.obsm["CDKN1A"] = cdkn1a_exp
     original.obs["ds"] = scores
     original.uns["log"] = log

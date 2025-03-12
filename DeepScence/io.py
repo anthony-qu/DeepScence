@@ -146,17 +146,20 @@ def calculate_correlation(seneScore, adata, direction_n, species):
     return correlation_results
 
 
-def fix_score_direction(scores, adata, n, species):
+def fix_score_direction(scores, adata, n, species, anchor_gene):
 
-    if "CDKN1A" in adata.var_names:
-        anchor = "CDKN1A"
-    elif "Cdkn1a" in adata.var_names:
-        anchor = "Cdkn1a"
+    if anchor_gene is None:
+        if "CDKN1A" in adata.var_names:
+            anchor = "CDKN1A"
+        elif "Cdkn1a" in adata.var_names:
+            anchor = "Cdkn1a"
+        else:
+            anchor = None
+            logger.warning(
+                "[WARNING]: CDKN1A/Cdkn1a is not present in the gene set. Please set `anchor_gene` to ensure correct score direction!"
+            )
     else:
-        anchor = None
-        logger.warning(
-            "[WARNING]: CDKN1A/Cdkn1a is not present in the gene set. Its expression is used to avoid scores being the opposite. Please check if `-adata.obs['ds']` makes more sense for your data!"
-        )
+        anchor = anchor_gene
     corr_metrics = []
     reverse_log = []
     corr_dfs = []
