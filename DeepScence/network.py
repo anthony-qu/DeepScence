@@ -62,14 +62,22 @@ class Autoencoder(nn.Module):
                 if m.bias is not None:
                     init.zeros_(m.bias)
 
-    def predict(self, adata):
+    def predict(self, adata, device=None):
+        if device is None:
+        # If no device is specified, grab it from the model parameters
+            device = next(self.parameters()).device
         if issparse(adata.X):
             X_input = torch.tensor(adata.X.toarray(), dtype=torch.float32)
         else:
             X_input = torch.tensor(adata.X, dtype=torch.float32)
 
+        X_input = X_input.to(device)
+
+        # Forward pass
         encoded = self.encoder(X_input)
         bottleneck = self.bottleneck[0](encoded)
+
+        # Convert result back to CPU + NumPy
         encoded_scores = bottleneck.detach().cpu().numpy()
 
         # if self.lambda_ortho is not None:
