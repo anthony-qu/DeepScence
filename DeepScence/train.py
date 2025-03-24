@@ -13,13 +13,14 @@ from scipy.stats import pearsonr
 def train(
     model,
     adata,
+    device,
     learning_rate=0.03,
     epochs=200,
     validation_split=0.1,
     early_stop=10,
     reduce_lr=10,
     batch_size=None,
-    verbose=False,
+    verbose=False
 ):
     # get input normalized matrix
     if issparse(adata.X):
@@ -78,6 +79,13 @@ def train(
         model.train()
         train_loss = 0
         for X, sf, batch_matrix, targets in train_loader:
+
+            # to device
+            X = X.to(device)
+            sf = sf.to(device)
+            batch_matrix = batch_matrix.to(device)
+            targets = targets.to(device)
+
             inputs = (X, sf, batch_matrix)
             optimizer.zero_grad()
             output = model(inputs)
@@ -95,6 +103,12 @@ def train(
             with torch.no_grad():
                 val_loss = 0
                 for X, sf, batch_matrix, targets in val_loader:
+                    # to device
+                    X = X.to(device)
+                    sf = sf.to(device)
+                    batch_matrix = batch_matrix.to(device)
+                    targets = targets.to(device)
+                    
                     inputs = (X, sf, batch_matrix)
                     output = model(inputs)
                     loss = model.loss(targets, output)
@@ -104,9 +118,9 @@ def train(
         else:
             val_loss = np.nan
 
-        # record correlation
-        encoded_scores = model.encoded_scores.detach().cpu().numpy()
-        pearson_corr, _ = pearsonr(encoded_scores[:, 0], encoded_scores[:, 1])
+        # # record correlation
+        # encoded_scores = model.encoded_scores.detach().cpu().numpy()
+        # pearson_corr, _ = pearsonr(encoded_scores[:, 0], encoded_scores[:, 1])
 
         # if verbose:
         #     print(

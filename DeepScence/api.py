@@ -106,6 +106,13 @@ def DeepScence(
     assert isinstance(adata, anndata.AnnData), "adata must be an AnnData instance"
     warnings.filterwarnings("ignore", category=RuntimeWarning, module="threadpoolctl")
 
+    # check if GPU is available
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        logger.info("GPU is available, using CUDA...")
+    else:
+        logger.info("GPU not available, using CPU...")
+
     # set seed for reproducibility
     random.seed(random_state)
     np.random.seed(random_state)
@@ -138,7 +145,7 @@ def DeepScence(
         dropout=dropout,
         lambda_ortho=lambda_ortho,
         lambda_mmd=lambda_mmd,
-    )
+    ).to(device)
 
     if lambda_ortho is not None:
         logger.info("Lambda provided, capturing scores in 2 neurons.")
@@ -146,13 +153,14 @@ def DeepScence(
     train(
         model,
         adata,
+        device=device,
         learning_rate=learning_rate,
         epochs=epochs,
         batch_size=batch_size,
         validation_split=validation_split,
         reduce_lr=reduce_lr,
         early_stop=early_stop,
-        verbose=verbose,
+        verbose=verbose
     )
 
     scores = model.predict(adata)
