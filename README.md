@@ -35,4 +35,4 @@ if senescence binarization is needed, call:
 adata_scored = DeepScence(adata, binarize=True)
 ```
 
-The resulting `adata_scored` contains senescence scores in `adata_scored.obs["ds"]`, and binarization result (1: senescent cells, 0: normal cells) in `adata_scored.obs["binary"]` if `binarize=True`. 
+The resulting `adata_scored` contains senescence scores in `adata_scored.obs["ds"]`, and binarization result in `adata_scored.obs["binary"]` if `binarize=True`. 
