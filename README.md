@@ -14,7 +14,7 @@ pip install DeepScence (not yet available)
 
 or directly from github
 ```
-pip install git+https://github.com/quyilong0402/DeepScence.git
+pip install git+https://github.com/anthony-qu/DeepScence.git
 ```
 
 ### Usage
