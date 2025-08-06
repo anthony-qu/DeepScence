@@ -14,13 +14,12 @@ setup(
         ], 
     },
     install_requires=[
-        "dca",
         "torch==2.2.2",
         "kneed",
         "protobuf>=3.9.0,<3.21.0",
         "anndata>=0.8",
         "pyyaml<=5.4.1",
     ],
-    url="https://github.com/quyilong0402/DeepScence",
+    url="https://github.com/anthony-qu/DeepScence",
 
 )
