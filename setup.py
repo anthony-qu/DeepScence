@@ -14,6 +14,7 @@ setup(
         ], 
     },
     install_requires=[
+        "dca",
         "torch==2.2.2",
         "kneed",
         "protobuf>=3.9.0,<3.21.0",
