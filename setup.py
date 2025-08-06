@@ -15,6 +15,8 @@ setup(
     },
     install_requires=[
         "dca",
+        'keras>=2.4,<2.6',
+        'tensorflow>=2.0,<2.5',
         "torch==2.2.2",
         "kneed",
         "protobuf>=3.9.0,<3.21.0",
