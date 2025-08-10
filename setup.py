@@ -18,7 +18,7 @@ setup(
         "kneed",
         "protobuf>=3.9.0,<3.21.0",
         "anndata>=0.8",
-        "pyyaml<=5.4.1",
+        # "pyyaml<=5.4.1",
     ],
     url="https://github.com/anthony-qu/DeepScence",
 
