@@ -78,4 +78,4 @@ If a compatible GPU is detected, DeepScence will use it automatically — no ext
 
 A step-by-step usage example of DeepScence is available here:
 
-[**View the tutorial notebook**](tutorial/demo.ipynb)
+[**View the tutorial notebook**](DeepScence/tutorial/demo.ipynb)
