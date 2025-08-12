@@ -2,7 +2,7 @@
 
 **DeepScence** is an unsupervised machine learning model based on autoencoders for accurately scoring and identifying senescent cells in single-cell RNA-seq (scRNA-seq) and spatial transcriptomics datasets.
 
-![DeepScence Overview](DeepScence/data/DeepScience_overview.pdf)
+![DeepScence Overview](DeepScence/data/DeepScence_overview.png)
 
 DeepScence takes as input an **`AnnData`** object with an expression count matrix stored in `adata.X` and outputs:
 - A continuous senescence score (`adata.obs["ds"]`)
