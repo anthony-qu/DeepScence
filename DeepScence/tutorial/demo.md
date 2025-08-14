@@ -1,14 +1,19 @@
 # DeepScence Tutorial
 
 ## Table of Contents
-- [1. Intro](#1-intro)
-- [2. Dataset A — In-vitro IMR-90 dataset](#2-dataset-a--in-vitro-imr-90-dataset)
-  - [2.1 Prepare input for DeepScence](#21-prepare-input-for-deepscence)
-  - [2.2 Run DeepScence & Visualize](#22-run-deepscence--visualize)
-- [3. Dataset B — In-vivo mouse muscle data](#3-dataset-b--in-vivo-mouse-muscle-data)
-  - [3.1 Prepare input for DeepScence](#31-prepare-input-for-deepscence)
-  - [3.2 Run DeepScence & Visualize](#32-run-deepscence--visualize)
-- [4. Notes & Tips](#4-notes--tips)
+
+<div style="font-size:1.3em">
+
+- [1. Intro](#1-intro)  
+- [2. Example: In-vitro IMR-90 dataset](#2-example-in-vitro-imr-90-dataset)  
+  - [2.1 Prepare input for DeepScence](#21-prepare-input-for-deepscence)  
+  - [2.2 Run DeepScence & Visualize](#22-run-deepscence--visualize)  
+- [3. Example: In-vivo mouse muscle data](#3-example-in-vivo-mouse-muscle-data)  
+  - [3.1 Prepare input for DeepScence](#31-prepare-input-for-deepscence)  
+  - [3.2 Run DeepScence & Visualize](#32-run-deepscence--visualize)  
+- [4. Working with mouse data and other parameters](#4-working-with-mouse-data-and-other-parameters)  
+
+</div>
 
 
 ```python
@@ -31,8 +36,11 @@ DeepScence outputs:
 - A continuous senescence score (`adata.obs["ds"]`)
 - A binary classification for senescent cells and normal cells (`adata.obs["binary"]`)
 
-***Note***:
-For datasets collected from cell line where only one cell type is present, please refer to the IMR-90 example below. For datasets collected in-vivo where multiple cell types are present, please refer to the second example for controlling unwanted covariates.
+<div style="border: 2px solid #f39c12; padding: 10px; border-radius: 5px; background-color: #fcf8e3; color: black;">
+<b>Note:</b><br>
+For datasets collected from cell lines where only one cell type is present, please refer to the IMR-90 example below.<br>
+For datasets collected in vivo where multiple cell types are present, please refer to the second example for controlling unwanted covariates.
+</div>
 
 
 ## 2. Example: In-vitro IMR-90 dataset
@@ -115,9 +123,9 @@ plt.show()
 
 
 ## 3. Example: In-vivo mouse muscle data
-This is an in-vivo scRNA-seq dataset collected on mouse muscle with senescence induced by CTX toxin. Cells labeled as `adata.obs["stim"] == "CTX"` are injured cells which are more senescence-enriched.
+This is an in-vivo scRNA-seq dataset collected from mouse muscle, with senescence induced by cardiotoxin (CTX). `adata.obs["stim"] == "CTX"` represents the injured condition, which is more enriched in senescent cells.
 
-Note there are multiple cell types present in this dataset, and we want to control for cell type variation when running DeepScence. To achieve this, set `adata.obs["b"] = "adata.obs["celltype]` to remove "batch" effect, or any unwanted variation in the data, prior to running DeepScence. This step is recommended for any in-vivo datasets with multiple cell types present.
+Since multiple cell types are present in this dataset, it is important to control for cell type variation when running DeepScence. To do this, assign additional column by setting `adata.obs["b"] = adata.obs["celltype"]` so that DeepScence treat cell types as “batch” groups. During training, DeepScence minimizes the maximum mean discrepancy (MMD) between these groups in the latent space. This ensures that the senescence scores are not confounded by cell type–specific variation and is recommended when dealing with in-vivo datasets.
 
 ### 3.1 Prepare input for DeepScence
 
@@ -132,7 +140,7 @@ dca(adata) # This step might take some time...
     dca: Calculating reconstructions...
 
 
-## 3.2 Run DeepScence and Visualize
+### 3.2 Run DeepScence and Visualize
 
 
 ```python
@@ -170,7 +178,11 @@ plt.show()
     
 
 
+## 4. Working with mouse data and other parameters
+
+1. When working with mouse data like the one above, set `species="mouse"` when running **DeepScence**.  
+2. **DeepScence** uses the **CoreScence** gene signature list by default. If you want to test out another list of genes, use:  
 
 ```python
-
-```
+genelist = ["CDKN1A", "IL6", ...]
+adata = DeepScence(adata, custome_gs=genelist)
