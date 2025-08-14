@@ -64,4 +64,4 @@ pip install git+https://github.com/anthony-qu/dca_patched.git
 
 A step-by-step usage example of DeepScence is available here:
 
-[**View the tutorial notebook**](DeepScence/tutorial/demo.ipynb)
+[**View the tutorial notebook**](DeepScence/tutorial/demo.md)
